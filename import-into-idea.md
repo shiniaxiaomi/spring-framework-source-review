@@ -4,10 +4,13 @@ The following has been tested against IntelliJ IDEA 2016.2.2
 
 _Within your locally cloned spring-framework working directory:_
 
-1. Precompile `spring-oxm` with `./gradlew :spring-oxm:compileTestJava`
-2. Import into IntelliJ (File -> New -> Project from Existing Sources -> Navigate to directory -> Select build.gradle)
-3. When prompted exclude the `spring-aspects` module (or after the import via File-> Project Structure -> Modules)
-4. Code away
+Precompile `spring-oxm` with `./gradlew :spring-oxm:compileTestJava`
+
+Import into IntelliJ (File -> New -> Project from Existing Sources -> Navigate to directory -> Select build.gradle)
+
+When prompted exclude the `spring-aspects` module (or after the import via File-> Project Structure -> Modules)
+
+Code away
 
 ## Known issues
 

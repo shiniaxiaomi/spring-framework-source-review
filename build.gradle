@@ -329,13 +329,13 @@ configure([rootProject] + javaProjects) { project ->
 		}
 	}
 
-	test {
-		useJUnitPlatform()
-		include(["**/*Tests.class", "**/*Test.class"])
-		systemProperty("java.awt.headless", "true")
-		systemProperty("testGroups", project.properties.get("testGroups"))
-		systemProperty("io.netty.leakDetection.level", "paranoid")
-	}
+//	test {
+//		useJUnitPlatform()
+//		include(["**/*Tests.class", "**/*Test.class"])
+//		systemProperty("java.awt.headless", "true")
+//		systemProperty("testGroups", project.properties.get("testGroups"))
+//		systemProperty("io.netty.leakDetection.level", "paranoid")
+//	}
 
 	checkstyle {
 		toolVersion = "8.27"
@@ -419,9 +419,9 @@ configure(rootProject) {
 	publishing {
 		publications {
 			mavenJava(MavenPublication) {
-				artifact docsZip
-				artifact schemaZip
-				artifact distZip
+//				artifact docsZip
+//				artifact schemaZip
+//				artifact distZip
 			}
 		}
 	}
