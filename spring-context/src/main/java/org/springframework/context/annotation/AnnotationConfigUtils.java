@@ -151,35 +151,39 @@ public abstract class AnnotationConfigUtils {
 		DefaultListableBeanFactory beanFactory = unwrapDefaultListableBeanFactory(registry);
 		if (beanFactory != null) {
 			if (!(beanFactory.getDependencyComparator() instanceof AnnotationAwareOrderComparator)) {
-				beanFactory.setDependencyComparator(AnnotationAwareOrderComparator.INSTANCE);
+				beanFactory.setDependencyComparator(AnnotationAwareOrderComparator.INSTANCE);//创建依赖优先级排序类
 			}
 			if (!(beanFactory.getAutowireCandidateResolver() instanceof ContextAnnotationAutowireCandidateResolver)) {
-				beanFactory.setAutowireCandidateResolver(new ContextAnnotationAutowireCandidateResolver());
+				beanFactory.setAutowireCandidateResolver(new ContextAnnotationAutowireCandidateResolver());//创建获取懒加载的bean的处理类
 			}
 		}
 
+		//根据之后的一系列条件判断，来创建并保存对应的beanPostProcessor，
+		//并且将BeanPostProcessor的beanDefinition添加到beanDefinitionMap中（他是一个ConcurrentHashMap实现）
 		Set<BeanDefinitionHolder> beanDefs = new LinkedHashSet<>(8);
 
+		//如果beanDefinitionMap中没有internalConfigurationAnnotationProcessor，则创建并添加
 		if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(ConfigurationClassPostProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		//如果beanDefinitionMap中没有internalAutowiredAnnotationProcessor，则创建并添加
 		if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
-		// Check for JSR-250 support, and if present add the CommonAnnotationBeanPostProcessor.
+		//检查是否支持JSR-250，并且如果beanDefinitionMap中没有internalCommonAnnotationProcessor，则创建并添加
 		if (jsr250Present && !registry.containsBeanDefinition(COMMON_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(CommonAnnotationBeanPostProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, COMMON_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
-		// Check for JPA support, and if present add the PersistenceAnnotationBeanPostProcessor.
+		//检查是否支持JPA，，并且如果beanDefinitionMap中没有internalPersistenceAnnotationProcessor，则创建并添加
 		if (jpaPresent && !registry.containsBeanDefinition(PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition();
 			try {
@@ -194,18 +198,21 @@ public abstract class AnnotationConfigUtils {
 			beanDefs.add(registerPostProcessor(registry, def, PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		//如果beanDefinitionMap中没有internalPersistenceAnnotationProcessor，则创建并添加
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(EventListenerMethodProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, EVENT_LISTENER_PROCESSOR_BEAN_NAME));
 		}
 
+		//如果beanDefinitionMap中没有internalEventListenerFactory，则创建并添加
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_FACTORY_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(DefaultEventListenerFactory.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, EVENT_LISTENER_FACTORY_BEAN_NAME));
 		}
 
+		//返回缓存的beanPostProcessor
 		return beanDefs;
 	}
 
@@ -230,14 +237,15 @@ public abstract class AnnotationConfigUtils {
 		}
 	}
 
+	//解析类上的注解,并获取到注解中的信息
 	public static void processCommonDefinitionAnnotations(AnnotatedBeanDefinition abd) {
 		processCommonDefinitionAnnotations(abd, abd.getMetadata());
 	}
 
 	static void processCommonDefinitionAnnotations(AnnotatedBeanDefinition abd, AnnotatedTypeMetadata metadata) {
-		AnnotationAttributes lazy = attributesFor(metadata, Lazy.class);
+		AnnotationAttributes lazy = attributesFor(metadata, Lazy.class);//获取@Lazy注解
 		if (lazy != null) {
-			abd.setLazyInit(lazy.getBoolean("value"));
+			abd.setLazyInit(lazy.getBoolean("value"));//如果不为null,则设置为懒加载
 		}
 		else if (abd.getMetadata() != metadata) {
 			lazy = attributesFor(abd.getMetadata(), Lazy.class);
@@ -246,21 +254,21 @@ public abstract class AnnotationConfigUtils {
 			}
 		}
 
-		if (metadata.isAnnotated(Primary.class.getName())) {
+		if (metadata.isAnnotated(Primary.class.getName())) {//判断是否被@Primary注解所标记
 			abd.setPrimary(true);
 		}
-		AnnotationAttributes dependsOn = attributesFor(metadata, DependsOn.class);
+		AnnotationAttributes dependsOn = attributesFor(metadata, DependsOn.class);//获取@DependsOn注解
 		if (dependsOn != null) {
-			abd.setDependsOn(dependsOn.getStringArray("value"));
+			abd.setDependsOn(dependsOn.getStringArray("value"));//如果不为null,则设置该bean所依赖的值
 		}
 
-		AnnotationAttributes role = attributesFor(metadata, Role.class);
+		AnnotationAttributes role = attributesFor(metadata, Role.class);//获取@Role注解
 		if (role != null) {
-			abd.setRole(role.getNumber("value").intValue());
+			abd.setRole(role.getNumber("value").intValue());//如果不为null,则设置@Role注解的值
 		}
-		AnnotationAttributes description = attributesFor(metadata, Description.class);
+		AnnotationAttributes description = attributesFor(metadata, Description.class);//获取@Description注解
 		if (description != null) {
-			abd.setDescription(description.getString("value"));
+			abd.setDescription(description.getString("value"));//如果不为null,则设置@Description注解的值
 		}
 	}
 

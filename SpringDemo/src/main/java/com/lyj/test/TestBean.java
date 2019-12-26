@@ -1,6 +1,9 @@
 package com.lyj.test;
 
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
 
 /**
  * @author yingjie.lu
@@ -10,9 +13,19 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-public class TestBean {
+public class TestBean implements InitializingBean {
 
 	public TestBean() {
 		System.out.println("TestBean");
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		System.out.println("afterPropertiesSet");
+	}
+
+	@PostConstruct
+	public void init(){
+		System.out.println("PostConstruct");
 	}
 }

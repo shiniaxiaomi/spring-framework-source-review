@@ -16,26 +16,31 @@ public class AwareBean implements InstantiationAwareBeanPostProcessor {
 
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
+		System.out.println("postProcessBeforeInstantiation:"+beanName);
 		return null;
 	}
 
 	@Override
 	public boolean postProcessAfterInstantiation(Object bean, String beanName) throws BeansException {
+		System.out.println("postProcessAfterInstantiation:"+beanName);
 		return true;
 	}
 
 	@Override
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) throws BeansException {
+		System.out.println("postProcessProperties:"+beanName);
 		return null;
 	}
 
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		System.out.println("postProcessBeforeInitialization:"+beanName);
 		return bean;
 	}
 
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+		System.out.println("postProcessAfterInitialization:"+beanName);
 		return bean;
 	}
 }

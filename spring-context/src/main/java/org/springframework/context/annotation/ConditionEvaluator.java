@@ -148,7 +148,7 @@ class ConditionEvaluator {
 				@Nullable Environment environment, @Nullable ResourceLoader resourceLoader) {
 
 			this.registry = registry;
-			this.beanFactory = deduceBeanFactory(registry);
+			this.beanFactory = deduceBeanFactory(registry);//根据registry推断出对应的beanFactory
 			this.environment = (environment != null ? environment : deduceEnvironment(registry));
 			this.resourceLoader = (resourceLoader != null ? resourceLoader : deduceResourceLoader(registry));
 			this.classLoader = deduceClassLoader(resourceLoader, this.beanFactory);
