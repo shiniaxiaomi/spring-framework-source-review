@@ -400,7 +400,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			this.earlyApplicationEvents.add(applicationEvent);
 		}
 		else {
-			getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);
+			getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);//循环调用多个应用启动事件的事件监听器
 		}
 
 		// Publish event via parent context as well...
@@ -550,7 +550,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				//实例化所有剩下的非懒加载的单例bean
 				finishBeanFactoryInitialization(beanFactory);
 
-				// Last step: publish corresponding event.
+				//最后一步,发送应用启动完成的消息事件
 				finishRefresh();
 			}
 
@@ -560,19 +560,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 							"cancelling refresh attempt: " + ex);
 				}
 
-				// Destroy already created singletons to avoid dangling resources.
+				//销毁已经创建的单例，以避免挂起资源。
 				destroyBeans();
 
-				// Reset 'active' flag.
+				//取消应用刷新
 				cancelRefresh(ex);
 
-				// Propagate exception to caller.
+				//抛出异常
 				throw ex;
 			}
 
 			finally {
-				// Reset common introspection caches in Spring's core, since we
-				// might not ever need metadata for singleton beans anymore...
+				//清除缓存
 				resetCommonCaches();
 			}
 		}
@@ -788,18 +787,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void initLifecycleProcessor() {
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
-		if (beanFactory.containsLocalBean(LIFECYCLE_PROCESSOR_BEAN_NAME)) {
+		if (beanFactory.containsLocalBean(LIFECYCLE_PROCESSOR_BEAN_NAME)) {//如果存在lifecycleProcessor
 			this.lifecycleProcessor =
-					beanFactory.getBean(LIFECYCLE_PROCESSOR_BEAN_NAME, LifecycleProcessor.class);
+					beanFactory.getBean(LIFECYCLE_PROCESSOR_BEAN_NAME, LifecycleProcessor.class);//则获取lifecycleProcessor对象
 			if (logger.isTraceEnabled()) {
 				logger.trace("Using LifecycleProcessor [" + this.lifecycleProcessor + "]");
 			}
 		}
-		else {
-			DefaultLifecycleProcessor defaultProcessor = new DefaultLifecycleProcessor();
+		else {//如果不存在lifecycleProcessor
+			DefaultLifecycleProcessor defaultProcessor = new DefaultLifecycleProcessor();//则创建一个默认的lifecycleProcessor
 			defaultProcessor.setBeanFactory(beanFactory);
 			this.lifecycleProcessor = defaultProcessor;
-			beanFactory.registerSingleton(LIFECYCLE_PROCESSOR_BEAN_NAME, this.lifecycleProcessor);
+			beanFactory.registerSingleton(LIFECYCLE_PROCESSOR_BEAN_NAME, this.lifecycleProcessor);//注册默认创建的lifecycleProcessor
 			if (logger.isTraceEnabled()) {
 				logger.trace("No '" + LIFECYCLE_PROCESSOR_BEAN_NAME + "' bean, using " +
 						"[" + this.lifecycleProcessor.getClass().getSimpleName() + "]");
@@ -883,19 +882,19 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * {@link org.springframework.context.event.ContextRefreshedEvent}.
 	 */
 	protected void finishRefresh() {
-		// Clear context-level resource caches (such as ASM metadata from scanning).
+		//清除上下文级的资源缓存(比如扫描的ASM元数据)。
 		clearResourceCaches();
 
-		// Initialize lifecycle processor for this context.
+		//为此上下文初始化生命周期处理器。
 		initLifecycleProcessor();
 
-		// Propagate refresh to lifecycle processor first.
+		//获取默认创建的生命周期处理器,并调用onRefresh方法(上下文刷新通知，例如用于自动启动组件。)
 		getLifecycleProcessor().onRefresh();
 
-		// Publish the final event.
+		//发送最终的应用启动(刷新)事件(ContextRefreshedEvent)
 		publishEvent(new ContextRefreshedEvent(this));
 
-		// Participate in LiveBeansView MBean, if active.
+		//不知道干什么用
 		LiveBeansView.registerApplicationContext(this);
 	}
 

@@ -88,7 +88,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
 		this();//创建好AnnotationConfigApplicationContext容器，并注册初始的PostProcessor
 		register(componentClasses);//挨个注册传入的类解析后注册到BeanDefinitionMap中
-		refresh();
+		refresh();//创建好所有单实例bean,并自动注入好bean的属性,和解决bean依赖的问题
 	}
 
 	/**

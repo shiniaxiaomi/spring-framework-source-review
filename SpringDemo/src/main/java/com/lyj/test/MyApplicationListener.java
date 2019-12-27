@@ -11,8 +11,16 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MyApplicationListener implements ApplicationListener<ApplicationEvent> {
+	/**
+	 * 在应用最后加载完成之后回调
+	 * @param event the event to respond to
+	 */
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
 		System.out.println("onApplicationEvent");
+	}
+
+	public MyApplicationListener() {
+		System.out.println("构造方法:MyApplicationListener");
 	}
 }

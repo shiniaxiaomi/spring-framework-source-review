@@ -14,10 +14,18 @@ public class MyApp {
 
 	public static void main(String[] args) {
 
+		//指定启动类
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(MyApp.class);
 		Object testBean = context.getBean("testBean");
 		System.out.println(testBean);
 
+		//直接指定扫描哪个包
+//		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext("com.lyj.test");
+//		Object testBean = context.getBean("testBean");
+//		System.out.println(testBean);
 	}
 
+	public MyApp() {
+		System.out.println("构造函数:MyApp");
+	}
 }

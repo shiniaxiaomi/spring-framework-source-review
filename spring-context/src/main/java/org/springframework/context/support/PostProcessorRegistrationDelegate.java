@@ -52,13 +52,15 @@ final class PostProcessorRegistrationDelegate {
 	}
 
 
+	//执行BeanFactory的后置处理器
 	public static void invokeBeanFactoryPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
-		// Invoke BeanDefinitionRegistryPostProcessors first, if any.
 		Set<String> processedBeans = new HashSet<>();
 
-		if (beanFactory instanceof BeanDefinitionRegistry) {//如果beanFactory属于BeanDefinitionRegistry类型
+		//+++++++++++++++++++++++++先执行默认已经存在的BeanDefinitionRegistry的回调+++++++++++++++++++++++++
+		//如果beanFactory属于BeanDefinitionRegistry类型
+		if (beanFactory instanceof BeanDefinitionRegistry) {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
@@ -86,8 +88,10 @@ final class PostProcessorRegistrationDelegate {
 			//遍历所有beanName,并将实现了PriorityOrdered接口的BeanDefinitionRegistryPostProcessor先加到RegistryProcessors中
 			for (String ppName : postProcessorNames) {
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
+					//通过bean的名称和类型注册并实例化相关的BeanDefinitionRegistry后置处理器
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
-					processedBeans.add(ppName);//并将已经添加的名称保存,用于接下来不重复执行回调
+					//并将已经添加的名称保存,用于接下来不重复执行回调
+					processedBeans.add(ppName);
 				}
 			}
 			//将实现PriorityOrdered接口的postProcessBeanDefinitionRegistry进行排序
@@ -105,7 +109,8 @@ final class PostProcessorRegistrationDelegate {
 			for (String ppName : postProcessorNames) {
 				if (!processedBeans.contains(ppName) && beanFactory.isTypeMatch(ppName, Ordered.class)) {
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
-					processedBeans.add(ppName);//并将已经添加的名称保存,用于接下来不重复执行回调
+					//并将已经添加的名称保存,用于接下来不重复执行回调
+					processedBeans.add(ppName);
 				}
 			}
 			//这里和之前上面的逻辑是一样的,就是先排序,再回调,最后清空
@@ -122,6 +127,7 @@ final class PostProcessorRegistrationDelegate {
 				for (String ppName : postProcessorNames) {
 					//如果之前都没有执行过该对应的回调,那么就添加
 					if (!processedBeans.contains(ppName)) {
+						//通过bean的名称和类型注册并实例化相关的BeanDefinitionRegistry后置处理器
 						currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 						processedBeans.add(ppName);
 						reiterate = true;
@@ -138,34 +144,38 @@ final class PostProcessorRegistrationDelegate {
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
 		}
-
+		//如果不属于BeanDefinitionRegistry类型
 		else {
-			// Invoke factory processors registered with the context instance.
+			//执行所有默认的BeanFactoryPostProcessors的postProcessBeanFactory方法
 			invokeBeanFactoryPostProcessors(beanFactoryPostProcessors, beanFactory);
 		}
 
-		// Do not initialize FactoryBeans here: We need to leave all regular beans
-		// uninitialized to let the bean factory post-processors apply to them!//获取到所有类型为BeanFactoryPostProcessor的beanName
+		//+++++++++++++++++++++++++在执行自己实现的BeanDefinitionRegistry的回调+++++++++++++++++++++++++
+		//获取到所有类型为BeanFactoryPostProcessor的beanName
 		String[] postProcessorNames =
 				beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
 
-		// Separate between BeanFactoryPostProcessors that implement PriorityOrdered,
-		// Ordered, and the rest.//===========下面的套路和上面是一样的,就是先排序,再执行,再清空==========
-		List<BeanFactoryPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();//下面将不同的还未执行过的BeanFactoryPostProcessor分发到不同的集合中
+		//===========下面的套路和上面是一样的,就是先排序,再执行,再清空==========
+		//下面将不同的还未执行过的BeanFactoryPostProcessor分发到不同的集合中
+		List<BeanFactoryPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
 		List<String> orderedPostProcessorNames = new ArrayList<>();
 		List<String> nonOrderedPostProcessorNames = new ArrayList<>();
 		for (String ppName : postProcessorNames) {
-			if (processedBeans.contains(ppName)) {//如果之前已经回调过了,那么这里就跳过
-				// skip - already processed in first phase above
+			//如果之前已经回调过了,那么这里就跳过
+			if (processedBeans.contains(ppName)) {
+
 			}
-			else if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {//如果实现了PriorityOrdered接口,则添加到对应的集合中
+			//如果实现了PriorityOrdered接口,则添加到对应的集合中
+			else if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
 				priorityOrderedPostProcessors.add(beanFactory.getBean(ppName, BeanFactoryPostProcessor.class));
 			}
-			else if (beanFactory.isTypeMatch(ppName, Ordered.class)) {//如果实现了Ordered接口,则添加到对应的集合中
+			//如果实现了Ordered接口,则添加到对应的集合中
+			else if (beanFactory.isTypeMatch(ppName, Ordered.class)) {
 				orderedPostProcessorNames.add(ppName);
 			}
+			//剩下的都添加到nonOrdered的集合中
 			else {
-				nonOrderedPostProcessorNames.add(ppName);//剩下的都添加到nonOrdered的集合中
+				nonOrderedPostProcessorNames.add(ppName);
 			}
 		}
 

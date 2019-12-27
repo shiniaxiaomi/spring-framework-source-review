@@ -848,16 +848,17 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			logger.trace("Pre-instantiating singletons in " + this);
 		}
 
-		//复制并将beanDefinitionNames转化成List集合,用于之后的迭代
+		//复制并将所有的beanDefinitionNames转化成List集合,用于之后的迭代
 		List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
 
 		//迭代触发所有的非懒加载单实例bean的initialization回调
 		for (String beanName : beanNames) {
+			//获取到对应的beanName的合并后的beanDefinition
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
-			//如果bean不是抽象的,并且是单例的,并且不是懒加载的
+			//===================如果bean不是抽象的,并且是单例的,并且不是懒加载的====================
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
-				//如果是FactoryBean
-				if (isFactoryBean(beanName)) {
+				//---------------如果是FactoryBean-----------------
+				if (isFactoryBean(beanName)) {//则通过Factory创建bean实例
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 					if (bean instanceof FactoryBean) {
 						final FactoryBean<?> factory = (FactoryBean<?>) bean;
@@ -877,13 +878,15 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					}
 				}
 				else {
-					//如果不是FactoryBean,则直接获取对应的bean
+					//-------------------如果不是FactoryBean----------------
+					//直接创建并获取对应的bean
 					getBean(beanName);
 				}
 			}
+			//===================如果bean不是抽象的,并且是单例的,并且不是懒加载的====================
 		}
 
-		// Trigger post-initialization callback for all applicable beans...
+		//在单例预实例化阶段结束时调用，并保证已经创建了所有常规的单例bean。
 		for (String beanName : beanNames) {
 			Object singletonInstance = getSingleton(beanName);
 			if (singletonInstance instanceof SmartInitializingSingleton) {

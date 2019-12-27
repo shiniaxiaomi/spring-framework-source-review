@@ -43,4 +43,8 @@ public class MyBeanDefinitionRegistryPostProcessor implements BeanDefinitionRegi
 //		DefaultListableBeanFactory factory = (DefaultListableBeanFactory) beanFactory;
 //		factory.registerBeanDefinition("mybean",null);
 	}
+
+	public MyBeanDefinitionRegistryPostProcessor() {
+		System.out.println("构造方法:MyBeanDefinitionRegistryPostProcessor");
+	}
 }

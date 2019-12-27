@@ -15,17 +15,27 @@ import javax.annotation.PostConstruct;
 @Component
 public class TestBean implements InitializingBean {
 
+	/**
+	 * 顺序1:调用构造方法
+	 */
 	public TestBean() {
-		System.out.println("TestBean");
+		System.out.println("构造方法:TestBean");
 	}
 
+	/**
+	 * 顺序3:调用实现InitializingBean接口的afterPropertiesSet方法
+	 * @throws Exception
+	 */
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		System.out.println("afterPropertiesSet");
+		System.out.println("afterPropertiesSet:TestBean");
 	}
 
+	/**
+	 * 顺序2:调用@PostConstruct标注的方法
+	 */
 	@PostConstruct
 	public void init(){
-		System.out.println("PostConstruct");
+		System.out.println("PostConstruct:TestBean");
 	}
 }
