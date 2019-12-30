@@ -58,14 +58,14 @@ final class PostProcessorRegistrationDelegate {
 
 		Set<String> processedBeans = new HashSet<>();
 
-		//+++++++++++++++++++++++++先执行默认已经存在的BeanDefinitionRegistry的回调+++++++++++++++++++++++++
+		//+++++++++++++++++++++++++先执行类型为BeanDefinitionRegistry的回调+++++++++++++++++++++++++
 		//如果beanFactory属于BeanDefinitionRegistry类型
 		if (beanFactory instanceof BeanDefinitionRegistry) {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
 
-			//进行beanFactoryPostProcessors的postProcessBeanDefinitionRegistry回调
+			//如果默认存在(默认没有,所以直接跳过),则先调用对应的postProcessBeanDefinitionRegistry
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
@@ -81,7 +81,7 @@ final class PostProcessorRegistrationDelegate {
 			//接下来会执行所有的beanPostProcessor相关的回调,用于在bean实例化进行人为的干预
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
-			//===========首先,先执行实现了PriorityOrdered接口的回调=========
+			//===========先回调实现了PriorityOrdered接口的BeanDefinitionRegistryPostProcessor=========
 			//拿到所有的BeanDefinitionRegistryPostProcessor类型的beanName
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
@@ -103,7 +103,7 @@ final class PostProcessorRegistrationDelegate {
 			//执行完之后,将已经执行的postProcessor全部清空
 			currentRegistryProcessors.clear();
 
-			//=========接下来,执行实现Ordered接口的postProcessBeanDefinitionRegistry的回调========
+			//=========再回调实现了Ordered接口的BeanDefinitionRegistryPostProcessor========
 			//拿到实现了Ordered接口的所有beanName,进行遍历回调
 			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
@@ -119,7 +119,7 @@ final class PostProcessorRegistrationDelegate {
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
-			//===========最后,执行剩下的postProcessBeanDefinitionRegistry回调===========
+			//===========最后,回调剩下的BeanDefinitionRegistryPostProcessor===========
 			boolean reiterate = true;
 			while (reiterate) {
 				reiterate = false;
@@ -150,7 +150,7 @@ final class PostProcessorRegistrationDelegate {
 			invokeBeanFactoryPostProcessors(beanFactoryPostProcessors, beanFactory);
 		}
 
-		//+++++++++++++++++++++++++在执行自己实现的BeanDefinitionRegistry的回调+++++++++++++++++++++++++
+		//+++++++++++执行类型为BeanFactoryPostProcessor的回调(BeanFactoryPostProcessor是上面的BeanDefinitionRegistry类型的父类,所以可能会获取到更多的内容)++++++++++
 		//获取到所有类型为BeanFactoryPostProcessor的beanName
 		String[] postProcessorNames =
 				beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
