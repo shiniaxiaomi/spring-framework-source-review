@@ -1878,7 +1878,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}, getAccessControlContext());
 		}
 		else {
-			invokeAwareMethods(beanName, bean);
+			invokeAwareMethods(beanName, bean);//执行实现了Aware接口的方法
 		}
 
 		//保存bean实例的引用
@@ -1909,15 +1909,18 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 	private void invokeAwareMethods(final String beanName, final Object bean) {
 		if (bean instanceof Aware) {
+			//如果实现了BeanNameAware接口,则执行其setBeanName方法,可以获取到当前bean的名字
 			if (bean instanceof BeanNameAware) {
 				((BeanNameAware) bean).setBeanName(beanName);
 			}
+			//如果实现了BeanClassLoaderAware接口,则执行setBeanClassLoader方法,可以获取到BeanClassLoader
 			if (bean instanceof BeanClassLoaderAware) {
 				ClassLoader bcl = getBeanClassLoader();
 				if (bcl != null) {
 					((BeanClassLoaderAware) bean).setBeanClassLoader(bcl);
 				}
 			}
+			//如果是BeanFactoryAware接口,则执行setBeanFactory方法,将beanFactory传入,可以对beanFactory进行自定义
 			if (bean instanceof BeanFactoryAware) {
 				((BeanFactoryAware) bean).setBeanFactory(AbstractAutowireCapableBeanFactory.this);
 			}

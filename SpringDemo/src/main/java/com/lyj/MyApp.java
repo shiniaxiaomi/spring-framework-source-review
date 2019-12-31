@@ -18,6 +18,7 @@ public class MyApp {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(MyApp.class);
 		Object testBean = context.getBean("testBean");
 		System.out.println(testBean);
+		context.close();
 
 		//直接指定扫描哪个包
 //		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext("com.lyj.test");
