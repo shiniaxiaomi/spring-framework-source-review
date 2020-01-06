@@ -908,7 +908,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	//---------------------------------------------------------------------
 	// Implementation of BeanDefinitionRegistry interface
 	//---------------------------------------------------------------------
-
+	//注册beanDefinition到map中
 	@Override
 	public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
 			throws BeanDefinitionStoreException {
@@ -959,6 +959,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (hasBeanCreationStarted()) {
 				// Cannot modify startup-time collection elements anymore (for stable iteration)
 				synchronized (this.beanDefinitionMap) {
+					//将beanDefinition添加到map中
 					this.beanDefinitionMap.put(beanName, beanDefinition);
 					List<String> updatedDefinitions = new ArrayList<>(this.beanDefinitionNames.size() + 1);
 					updatedDefinitions.addAll(this.beanDefinitionNames);
@@ -1188,7 +1189,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		return null;
 	}
-
+	//解决需要注入的属性的依赖问题
 	@Override
 	@Nullable
 	public Object resolveDependency(DependencyDescriptor descriptor, @Nullable String requestingBeanName,
@@ -1207,18 +1208,18 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 		else {
 			Object result = getAutowireCandidateResolver().getLazyResolutionProxyIfNecessary(
-					descriptor, requestingBeanName);
+					descriptor, requestingBeanName);//获取懒加载的代理类
 			if (result == null) {
-				result = doResolveDependency(descriptor, requestingBeanName, autowiredBeanNames, typeConverter);
+				result = doResolveDependency(descriptor, requestingBeanName, autowiredBeanNames, typeConverter);//解决循环引用的问题
 			}
 			return result;
 		}
 	}
-
+	//解决需要注入的属性的依赖问题
 	@Nullable
 	public Object doResolveDependency(DependencyDescriptor descriptor, @Nullable String beanName,
 			@Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
-
+		//获取将要注入的属性(注入点，指向方法/构造函数参数或字段)
 		InjectionPoint previousInjectionPoint = ConstructorResolver.setCurrentInjectionPoint(descriptor);
 		try {
 			Object shortcut = descriptor.resolveShortcut(this);
@@ -1251,7 +1252,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (multipleBeans != null) {
 				return multipleBeans;
 			}
-
+			//获取自动注入属性的候选
+			//获取到需要注入的属性
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
 			if (matchingBeans.isEmpty()) {
 				if (isRequired(descriptor)) {
@@ -1262,9 +1264,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 			String autowiredBeanName;
 			Object instanceCandidate;
-
+			//如果有多个,则需要在进行判断(先按名称进行自动注入,如果没有名称,则按照类型自动注入)
 			if (matchingBeans.size() > 1) {
+				//获取自动注入的指定的名称
 				autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
+				//如果没有名称,则按照类型进行注入属性
 				if (autowiredBeanName == null) {
 					if (isRequired(descriptor) || !indicatesMultipleBeans(type)) {
 						return descriptor.resolveNotUnique(descriptor.getResolvableType(), matchingBeans);
@@ -1276,12 +1280,15 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 						return null;
 					}
 				}
+				//如果有名称,则优先按照名称进行注入
 				instanceCandidate = matchingBeans.get(autowiredBeanName);
 			}
 			else {
-				// We have exactly one match.
+				//如果只有一个匹配的
 				Map.Entry<String, Object> entry = matchingBeans.entrySet().iterator().next();
+				//获取bean的名称
 				autowiredBeanName = entry.getKey();
+				//获取bean的实体
 				instanceCandidate = entry.getValue();
 			}
 
@@ -1289,6 +1296,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				autowiredBeanNames.add(autowiredBeanName);
 			}
 			if (instanceCandidate instanceof Class) {
+				//==============================解决循环引用的问题==============================
+				//去beanFactory中获取对应的bean,调用的是getBean方法
+				//先去单例缓存中获取,如果没有,则进行创建(在创建过程中又会进行属性装配,然后在装配过程中又会调用该方法)
+				//主要的核心内容是: 在getSingleton()方法中,会尝试从一级缓存和二级缓存中去获取
 				instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
 			}
 			Object result = instanceCandidate;
@@ -1304,6 +1315,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			return result;
 		}
 		finally {
+			//设置当前正在创建的bean(如果已经不是正在创建,则删除集合中保存这正在创建的bean)
 			ConstructorResolver.setCurrentInjectionPoint(previousInjectionPoint);
 		}
 	}

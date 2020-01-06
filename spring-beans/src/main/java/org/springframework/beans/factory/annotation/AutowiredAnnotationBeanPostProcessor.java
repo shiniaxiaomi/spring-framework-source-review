@@ -396,7 +396,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
 		InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
 		try {
-			metadata.inject(bean, beanName, pvs);
+			metadata.inject(bean, beanName, pvs);//注入属性
 		}
 		catch (BeanCreationException ex) {
 			throw ex;
@@ -580,7 +580,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		if (beanName != null) {
 			for (String autowiredBeanName : autowiredBeanNames) {
 				if (this.beanFactory != null && this.beanFactory.containsBean(autowiredBeanName)) {
-					this.beanFactory.registerDependentBean(autowiredBeanName, beanName);
+					this.beanFactory.registerDependentBean(autowiredBeanName, beanName);//将依赖的对应关系注册到beanFactory中
 				}
 				if (logger.isTraceEnabled()) {
 					logger.trace("Autowiring by type from bean name '" + beanName +
@@ -622,7 +622,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 			super(field, null);
 			this.required = required;
 		}
-
+		//注入属性(并解决了循环引用的问题)
 		@Override
 		protected void inject(Object bean, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
 			Field field = (Field) this.member;
@@ -631,13 +631,13 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				value = resolvedCachedArgument(beanName, this.cachedFieldValue);
 			}
 			else {
-				DependencyDescriptor desc = new DependencyDescriptor(field, this.required);
+				DependencyDescriptor desc = new DependencyDescriptor(field, this.required);//获取需要注入属性值的依赖
 				desc.setContainingClass(bean.getClass());
 				Set<String> autowiredBeanNames = new LinkedHashSet<>(1);
 				Assert.state(beanFactory != null, "No BeanFactory available");
 				TypeConverter typeConverter = beanFactory.getTypeConverter();
 				try {
-					value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);
+					value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);//解决属性的依赖问题(获取到了需要注入属性的值,即使是有循环引用)
 				}
 				catch (BeansException ex) {
 					throw new UnsatisfiedDependencyException(null, beanName, new InjectionPoint(field), ex);
@@ -646,7 +646,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					if (!this.cached) {
 						if (value != null || this.required) {
 							this.cachedFieldValue = desc;
-							registerDependentBeans(beanName, autowiredBeanNames);
+							registerDependentBeans(beanName, autowiredBeanNames);//注册bean的依赖关系到beanFactory中
 							if (autowiredBeanNames.size() == 1) {
 								String autowiredBeanName = autowiredBeanNames.iterator().next();
 								if (beanFactory.containsBean(autowiredBeanName) &&
@@ -659,13 +659,14 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 						else {
 							this.cachedFieldValue = null;
 						}
-						this.cached = true;
+						this.cached = true;//标记已经缓存
 					}
 				}
 			}
+			//如果拿到了要注入的值,则进行注入(如果是循环引用,因为有了之前的处理,然后就没有继续循环的调用创建循环依赖的bean,而是返回了一个属性值为null的循环依赖bean,先进行设值)
 			if (value != null) {
-				ReflectionUtils.makeAccessible(field);
-				field.set(bean, value);
+				ReflectionUtils.makeAccessible(field);//开放属性的权限
+				field.set(bean, value);//将value的值设置的bean的字段中
 			}
 		}
 	}

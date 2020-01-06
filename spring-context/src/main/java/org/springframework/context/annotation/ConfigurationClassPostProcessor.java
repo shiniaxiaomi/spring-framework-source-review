@@ -224,7 +224,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 
 	/**
-	 * Derive further bean definitions from the configuration classes in the registry.
+	 * 从扫描类并解析为beanDefinition放到map中
 	 */
 	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
@@ -239,7 +239,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 		this.registriesPostProcessed.add(registryId);
 
-		processConfigBeanDefinitions(registry);
+		processConfigBeanDefinitions(registry);//真正的执行类的扫描和解析
 	}
 
 	/**
@@ -280,23 +280,24 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				}
 			}
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
+				//将目前已经有的标注有@Configure注解的类beanDefinition保存起来
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
 		}
 
-		// Return immediately if no @Configuration classes were found
+		//如果没有找到@Configuration注解，则立即返回
 		if (configCandidates.isEmpty()) {
 			return;
 		}
 
-		// Sort by previously determined @Order value, if applicable
+		//将标注有@Configure注解的类进行排序
 		configCandidates.sort((bd1, bd2) -> {
 			int i1 = ConfigurationClassUtils.getOrder(bd1.getBeanDefinition());
 			int i2 = ConfigurationClassUtils.getOrder(bd2.getBeanDefinition());
 			return Integer.compare(i1, i2);
 		});
 
-		// Detect any custom bean name generation strategy supplied through the enclosing application context
+		//生成配置类的beanName
 		SingletonBeanRegistry sbr = null;
 		if (registry instanceof SingletonBeanRegistry) {
 			sbr = (SingletonBeanRegistry) registry;
@@ -314,42 +315,60 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			this.environment = new StandardEnvironment();
 		}
 
-		// Parse each @Configuration class
+		//生成@Configuration注解的解析类
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
 				this.resourceLoader, this.componentScanBeanNameGenerator, registry);
 
+		//保存还未解析的配置类
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
+		//保存已经解析过的配置类
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
+
+		//进行循环并递归解析,直到candidates集合为空
 		do {
+			//包扫描并解析,然后将beanDefinition放到map中
 			parser.parse(candidates);
+			//校验
 			parser.validate();
 
 			Set<ConfigurationClass> configClasses = new LinkedHashSet<>(parser.getConfigurationClasses());
 			configClasses.removeAll(alreadyParsed);
 
-			// Read the model and create bean definitions based on its content
+			//注册配置类,并解析配置类,将配置类中需要扫描,导入等一些的bean都进行递归的解析
 			if (this.reader == null) {
 				this.reader = new ConfigurationClassBeanDefinitionReader(
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
+			//读取配置类，并向注册中心注册beanDefinition
 			this.reader.loadBeanDefinitions(configClasses);
+			//标记已经添加的配置类
 			alreadyParsed.addAll(configClasses);
 
 			candidates.clear();
+			//如果目前的beanDefinition个数大于原始的beanName个数
 			if (registry.getBeanDefinitionCount() > candidateNames.length) {
+				//获取目前的beanDefinition
 				String[] newCandidateNames = registry.getBeanDefinitionNames();
+				//获取以前的beanName
 				Set<String> oldCandidateNames = new HashSet<>(Arrays.asList(candidateNames));
+				//创建一个存放已经解析过的类的集合
 				Set<String> alreadyParsedClasses = new HashSet<>();
 				for (ConfigurationClass configurationClass : alreadyParsed) {
+					//将已经解析过的类存放到alreadyParsedClasses集合中
 					alreadyParsedClasses.add(configurationClass.getMetadata().getClassName());
 				}
+				//遍历目前的所有beanDefinition
 				for (String candidateName : newCandidateNames) {
+					//如果还未解析过
 					if (!oldCandidateNames.contains(candidateName)) {
+						//获取当前bean的beanDefinition
 						BeanDefinition bd = registry.getBeanDefinition(candidateName);
+						//如果当前bean是配置类 并且 还未被解析
 						if (ConfigurationClassUtils.checkConfigurationClassCandidate(bd, this.metadataReaderFactory) &&
 								!alreadyParsedClasses.contains(bd.getBeanClassName())) {
+							//将bean的beanDefinition添加到candidates集合中,等待下一轮循环时再次解析
 							candidates.add(new BeanDefinitionHolder(bd, candidateName));
 						}
 					}
@@ -359,14 +378,13 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 		while (!candidates.isEmpty());
 
-		// Register the ImportRegistry as a bean in order to support ImportAware @Configuration classes
+		//将ImportRegistry注册为bean，用来实现@Configuration类的@Import注解
 		if (sbr != null && !sbr.containsSingleton(IMPORT_REGISTRY_BEAN_NAME)) {
 			sbr.registerSingleton(IMPORT_REGISTRY_BEAN_NAME, parser.getImportRegistry());
 		}
 
 		if (this.metadataReaderFactory instanceof CachingMetadataReaderFactory) {
-			// Clear cache in externally provided MetadataReaderFactory; this is a no-op
-			// for a shared cache since it'll be cleared by the ApplicationContext.
+			//清除缓存
 			((CachingMetadataReaderFactory) this.metadataReaderFactory).clearCache();
 		}
 	}

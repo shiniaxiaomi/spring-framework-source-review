@@ -58,7 +58,7 @@ final class PostProcessorRegistrationDelegate {
 
 		Set<String> processedBeans = new HashSet<>();
 
-		//+++++++++++++++++++++++++先执行类型为BeanDefinitionRegistry的回调+++++++++++++++++++++++++
+		//+++++++++++++++先执行类型为BeanDefinitionRegistry的回调(进行对所有类的扫描和解析,并生成beanDefinition放到map中)+++++++++++++++
 		//如果beanFactory属于BeanDefinitionRegistry类型
 		if (beanFactory instanceof BeanDefinitionRegistry) {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
@@ -99,6 +99,7 @@ final class PostProcessorRegistrationDelegate {
 			//将所有的排好序并且优先级较高的先全部添加到registryProcessors中
 			registryProcessors.addAll(currentRegistryProcessors);
 			//执行优先级较高的postProcessBeanDefinitionRegistry回调
+			//=========主要执行ConfigureClassPostProcessor,用于处理@Configure注解的配置类==============
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			//执行完之后,将已经执行的postProcessor全部清空
 			currentRegistryProcessors.clear();
@@ -300,7 +301,7 @@ final class PostProcessorRegistrationDelegate {
 
 		//执行所有的postProcessBeanDefinitionRegistry回调
 		for (BeanDefinitionRegistryPostProcessor postProcessor : postProcessors) {
-			postProcessor.postProcessBeanDefinitionRegistry(registry);
+			postProcessor.postProcessBeanDefinitionRegistry(registry);//其中在ConfigureClassPostProcessor中的回调用于包扫描和解析beanDefinition
 		}
 	}
 

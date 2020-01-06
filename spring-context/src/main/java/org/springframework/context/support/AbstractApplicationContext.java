@@ -530,6 +530,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				//获取并执行BeanFactoryPostProcessor的回调(根据优先级来先后回调)\
 				//第一次回调:用于修改获取添加beanDefinition(BeanDefinitionRegistryPostProcessor的回调)
+				//在这里通过执行Configxxx了对类的所有扫描并解析生成成beanDefinition放到map中
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				//在bean实例化之前,实例化并注册beanPostProcessor

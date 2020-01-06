@@ -366,7 +366,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 						try {
 							//如果没有从单例缓存中获取到bean实例,则执行该方法创建bean实例
 							//在createBean中会实例化bean,并且在实例化前后执行对应的postProcessAfterInitialization回调
-							return createBean(beanName, mbd, args);
+							return createBean(beanName, mbd, args);//在创建bean时会顺便解决循环引用的问题
 						}
 						catch (BeansException ex) {
 							//如果异常,则销毁bean

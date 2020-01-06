@@ -273,6 +273,11 @@ public class DependencyDescriptor extends InjectionPoint implements Serializable
 	public Object resolveCandidate(String beanName, Class<?> requiredType, BeanFactory beanFactory)
 			throws BeansException {
 
+		//去单例缓存中获取对应bean(getSingleton()方法)
+		//在该方法中,先尝试从一级缓存中获取(已经创建好的bean),如果没有
+		//再尝试从二级缓存中获取(正在创建的bean,即有循环引用),如果没有获取到,并且允许循环引用
+		//则从单例工厂SingletonFactorys中获取对应的bean工厂,然后创建对应的bean,
+		//然后将bean保存到二级缓存中,并将其从单例工厂中删除,并返回通过单例工厂创建的bean
 		return beanFactory.getBean(beanName);
 	}
 

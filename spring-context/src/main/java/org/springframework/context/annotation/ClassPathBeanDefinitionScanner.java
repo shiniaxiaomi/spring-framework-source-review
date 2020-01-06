@@ -271,29 +271,29 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	 */
 	protected Set<BeanDefinitionHolder> doScan(String... basePackages) {
 		Assert.notEmpty(basePackages, "At least one base package must be specified");
-		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<>();
-		for (String basePackage : basePackages) {
-			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
-			for (BeanDefinition candidate : candidates) {
-				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
+		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<>();//用于临时保存扫描并解析后的beanDefinition
+		for (String basePackage : basePackages) {//遍历包名
+			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);//获取指定包中所有的类
+			for (BeanDefinition candidate : candidates) {//遍历包中的所有类
+				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);//获取类的作用域
 				candidate.setScope(scopeMetadata.getScopeName());
-				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
+				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);//获取类用于注册的名称
 				if (candidate instanceof AbstractBeanDefinition) {
 					postProcessBeanDefinition((AbstractBeanDefinition) candidate, beanName);
 				}
 				if (candidate instanceof AnnotatedBeanDefinition) {
-					AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
+					AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);//进行处理常见的注解信息
 				}
 				if (checkCandidate(beanName, candidate)) {
-					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
+					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);//创建一个对应的beanDefinition的占位符
 					definitionHolder =
 							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 					beanDefinitions.add(definitionHolder);
-					registerBeanDefinition(definitionHolder, this.registry);
+					registerBeanDefinition(definitionHolder, this.registry);//注册扫描并解析后的beanDefinition,将其放到beanDefinitionMap中
 				}
 			}
 		}
-		return beanDefinitions;
+		return beanDefinitions;//返回所有扫描并解析后临时保存的beanDefinition
 	}
 
 	/**

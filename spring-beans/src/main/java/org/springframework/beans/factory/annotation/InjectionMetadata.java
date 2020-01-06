@@ -107,9 +107,9 @@ public class InjectionMetadata {
 	public void inject(Object target, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
 		Collection<InjectedElement> checkedElements = this.checkedElements;
 		Collection<InjectedElement> elementsToIterate =
-				(checkedElements != null ? checkedElements : this.injectedElements);
+				(checkedElements != null ? checkedElements : this.injectedElements);//拿到需要注入的属性值
 		if (!elementsToIterate.isEmpty()) {
-			for (InjectedElement element : elementsToIterate) {
+			for (InjectedElement element : elementsToIterate) {//遍历属性值,进行注入
 				if (logger.isTraceEnabled()) {
 					logger.trace("Processing injected element of bean '" + beanName + "': " + element);
 				}

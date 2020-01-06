@@ -132,10 +132,10 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 */
 	protected void addSingleton(String beanName, Object singletonObject) {
 		synchronized (this.singletonObjects) {
-			this.singletonObjects.put(beanName, singletonObject);
-			this.singletonFactories.remove(beanName);
-			this.earlySingletonObjects.remove(beanName);
-			this.registeredSingletons.add(beanName);
+			this.singletonObjects.put(beanName, singletonObject);//将当前的bean添加到单例缓存中
+			this.singletonFactories.remove(beanName);//从单例工厂中删除当当前bean
+			this.earlySingletonObjects.remove(beanName);//从二级缓存中删除当前bean(表示已经创建成功,而非正在创建)
+			this.registeredSingletons.add(beanName);//将当前bean注册以下
 		}
 	}
 
@@ -151,9 +151,9 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		Assert.notNull(singletonFactory, "Singleton factory must not be null");
 		synchronized (this.singletonObjects) {
 			if (!this.singletonObjects.containsKey(beanName)) {
-				this.singletonFactories.put(beanName, singletonFactory);
-				this.earlySingletonObjects.remove(beanName);
-				this.registeredSingletons.add(beanName);
+				this.singletonFactories.put(beanName, singletonFactory);//单例对象的缓存:从bean名到bean实例。
+				this.earlySingletonObjects.remove(beanName);//早期单例对象的缓存:从bean名到bean实例。
+				this.registeredSingletons.add(beanName);//一组已注册的单例，包含按注册顺序排列的bean名称。
 			}
 		}
 	}
@@ -176,21 +176,24 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	@Nullable
 	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 		//从保存单实例bean的ConcurrentHashMap中获取实例
-		Object singletonObject = this.singletonObjects.get(beanName);
-		//如果没有获取到,并且该bean当前正在创建状态
+		Object singletonObject = this.singletonObjects.get(beanName);//一级缓存
+		//如果没有获取到,并且该bean当前正在创建状态(说明是循环引用)
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
 			synchronized (this.singletonObjects) {
-				//从早期的缓存单实例bean的HashMap中获取实例
-				singletonObject = this.earlySingletonObjects.get(beanName);
-				//如果没有获取到,并且允许早期引用
+				//先尝试从二级缓存中获取对应的bean
+				singletonObject = this.earlySingletonObjects.get(beanName);//二级缓存
+				//如果没有获取到 并且 允许循环引用
 				if (singletonObject == null && allowEarlyReference) {
 					//从缓存单例工厂的HashMap中获取对应的单例工厂
-					ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+					ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);//单例工厂
 					//如果获取到了单例工厂
 					if (singletonFactory != null) {
 						//从单例工厂获取一个对应的单实例bean
+						//在从单例工厂中创建的bean可以返回的是一个代理类,这样,就可以在循环引用中注入代理类
+						//(getObject()方法是可以自定义的,因此可以在获取bean是可以返回一个代理类)
+						//获取到对应的bean实例之后,需要将其进行缓存到二级缓存中,然后将其从singletonFactory中删除(因为他是单例的,不需要每次都使用工厂创建,因为已经缓存了)
 						singletonObject = singletonFactory.getObject();
-						//将获取到的单实例对象缓存到早期的缓存单实例bean的HashMap中
+						//将从单例工厂中创建的bean缓存到二级缓存中,在下一次来获取时,可以在之前就从二级缓存中直接获取,而不用通过单例工厂在创建依次
 						this.earlySingletonObjects.put(beanName, singletonObject);
 						//将缓存单例工厂的HashMap中的对应的单例工厂删除
 						this.singletonFactories.remove(beanName);

@@ -86,7 +86,7 @@ public class AnnotatedBeanDefinitionReader {
 		this.registry = registry;//保存传入容器的引用（AnnotationConfigApplicationContext）
 		//创建一个ConditionEvaluator实例（用来之后处理@Conditional注解）
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
-		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);//往注册器中注册相关注解的PostProcessor
+		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);//往注册器中注册相关注解@Configure的PostProcessor
 	}
 
 

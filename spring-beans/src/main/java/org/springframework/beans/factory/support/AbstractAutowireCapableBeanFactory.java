@@ -60,6 +60,7 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.beans.factory.UnsatisfiedDependencyException;
+import org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.AutowiredPropertyMarker;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -525,7 +526,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		try {
-			//如果在实例化前的回调中未返回bean,则在这里创建bean实例
+			//如果在实例化前的回调中未返回bean,则在这里创建bean实例(在doCreateBean中解决循环引用的问题)
 			Object beanInstance = doCreateBean(beanName, mbdToUse, args);
 			if (logger.isTraceEnabled()) {
 				logger.trace("Finished creating instance of bean '" + beanName + "'");
@@ -623,7 +624,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				logger.trace("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
-			//将当前的bean先添加到单例工厂中
+			//获取当前bean的早期引用添加到单例工厂中,通常用于解决循环引用问题(之后可以通过该单例工厂并指定beanName即可创建对应的bean实例,早期的bean引用可以理解成是一个占位符)
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
 		//========================急切的缓存单例以便解决循环引用的问题========================
@@ -631,7 +632,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		//========================初始化bean(设置属性并调用初始化方法)========================
 		Object exposedObject = bean;
 		try {
-			//设置bean的属性
+			//设置bean的属性(进行了属性注入,并解决了循环依赖的问题)
 			populateBean(beanName, mbd, instanceWrapper);
 			//执行bean的初始化方法和后置处理器的回调方法
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
@@ -1511,6 +1512,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
 					//主要回调:执行postProcessProperties回调,并返回修改后的参数集合类
+					//在AutowiredAnnotationBeanPostProcessor的回调中进行属性注入,即默认的自动装配,解决循环引用的问题
 					PropertyValues pvsToUse = ibp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
 					if (pvsToUse == null) {
 						if (filteredPds == null) {
